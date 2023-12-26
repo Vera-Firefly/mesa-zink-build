@@ -20,14 +20,17 @@ jobs:
   build:
     strategy:
       matrix:
-        arch: [ "arm32", "aarch64", "x86_64"]
+        arch: [ "arm32", "aarch64", "x86_64", "i686" ]
       fail-fast: false
 
     name: "Build for ${{matrix.arch}}"
 
     runs-on: ubuntu-latest
 
-    steps:        
+    steps:
+      - name: Disable symlinks in git config
+        run: git config --global core.symlinks false
+        
       - uses: actions/checkout@v2
 
       - name: Build
@@ -37,7 +40,7 @@ jobs:
           pip3 install mako
           export ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk-bundle"
           envsubst <android-${{matrix.arch}} >build-crossfile
-          git clone --depth 1 https://github.com/Mesa3D/mesa
+          git clone --depth 1 https://gitlab.freedesktop.org/mesa/mesa.git
           cd mesa
           git apply --reject --whitespace=fix ../mesa-zink.diff || echo "git apply failed"
           meson setup "build-android" \
@@ -59,10 +62,8 @@ jobs:
             -Dandroid-libbacktrace=disabled \
             -Dbuildtype=release
           ninja -C "build-android" install
-          cp /tmp/zink/lib/libOSMesa.so.8.0.0 /tmp/zink/lib/libOSMesa_8.so
       - name: Upload libraries
         uses: actions/upload-artifact@v2
         with:
           name: libzink_${{matrix.arch}}
-          path: /tmp/zink/lib/libOSMesa_8.so
-
+          path: /tmp/zink
