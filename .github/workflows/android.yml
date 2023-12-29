@@ -36,6 +36,22 @@ jobs:
           sudo apt install -y meson libxrandr-dev libxxf86vm-dev libxcb-*-dev libx11-xcb-dev libxfixes-dev libdrm-dev libx11-dev
           pip3 install mako
           export ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk-bundle"
+          envsubst <android-drm-${{matrix.arch}} >build-crossfile-drm
+          git clone --depth 1 https://gitlab.freedesktop.org/mesa/drm.git
+          cd drm
+          meson setup "build-android" \
+            --prefix=/tmp/drm-static \
+            --cross-file "../build-crossfile-drm" \
+            -Ddefault_library=static \
+            -Dintel=disabled \
+            -Dradeon=disabled \
+            -Damdgpu=disabled \
+            -Dnouveau=disabled \
+            -Dvmwgfx=disabled \
+            -Dfreedreno=disabled \
+            -Dvc4=disabled \
+            -Detnaviv=disabled
+          ninja -C "build-android" install
           envsubst <android-${{matrix.arch}} >build-crossfile
           git clone --depth 1 --branch 23.1-test https://github.com/Vera-Firefly/mesa-build
           cd mesa-build
@@ -54,7 +70,7 @@ jobs:
             -Dopengl=true \
             -Dosmesa=true \
             -Dvulkan-drivers= \
-            -Dgallium-drivers=virgl \
+            -Dgallium-drivers=swrast,panfrost \
             -Dshared-glapi=false \
             -Dandroid-libbacktrace=disabled \
             -Dbuildtype=release
@@ -64,5 +80,5 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: libzink_${{matrix.arch}}
-          path: /tmp/zink/lib/libOSMesa_8.so
+          path: /tmp/zink/*
 
