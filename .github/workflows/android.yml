@@ -36,6 +36,8 @@ jobs:
           sudo apt install -y meson libxrandr-dev libxxf86vm-dev libxcb-*-dev libx11-xcb-dev libxfixes-dev libdrm-dev libx11-dev
           pip3 install mako
           export ANDROID_NDK_HOME="$ANDROID_SDK_ROOT/ndk-bundle"
+          git clone --depth 1 --branch 23.1-test https://github.com/Vera-Firefly/mesa-build
+          cd mesa-build
           envsubst <android-drm-${{matrix.arch}} >build-crossfile-drm
           git clone --depth 1 https://gitlab.freedesktop.org/mesa/drm.git
           cd drm
@@ -53,8 +55,7 @@ jobs:
             -Detnaviv=disabled
           ninja -C "build-android" install
           envsubst <android-${{matrix.arch}} >build-crossfile
-          git clone --depth 1 --branch 23.1-test https://github.com/Vera-Firefly/mesa-build
-          cd mesa-build
+          cd ../mesa-build
           git apply --reject --whitespace=fix ../mesa-zink.diff || echo "git apply failed"
           meson setup "build-android" \
             --prefix=/tmp/zink \
